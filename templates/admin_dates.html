@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pickup dates | Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-page">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Mudika PO</p>
+            <h1>Pickup dates</h1>
+        </div>
+        <a href="{{ url_for('home') }}">View customer page</a>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="admin-messages" role="status">
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="admin-dates-layout">
+        <section class="admin-section">
+            <h2>Existing pickup dates</h2>
+            {% if pickup_dates %}
+            <ul class="pickup-date-list">
+                {% for pickup_date in pickup_dates %}
+                <li>
+                    <div>
+                        <strong>{{ pickup_date }}</strong>
+                        {% if pickup_date == active_pickup_date %}
+                        <span class="active-badge">Customer menu</span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('admin_manage_date', pickup_date=pickup_date) }}">Manage</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No pickup dates yet.</p>
+            {% endif %}
+        </section>
+
+        <section class="admin-section">
+            <h2>Create a pickup date</h2>
+            <form class="date-create-form" method="post" action="{{ url_for('admin') }}">
+                <div class="form-field">
+                    <label for="pickup-date">Pick-up date</label>
+                    <input id="pickup-date" name="pickup_date" type="date" required>
+                </div>
+                <button type="submit">Create date</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

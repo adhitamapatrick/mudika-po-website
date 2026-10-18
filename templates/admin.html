@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage pickup | Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+</head>
+<body class="admin-page">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Mudika PO / Pickup date</p>
+            <h1>{{ pickup_date }}</h1>
+        </div>
+        <nav class="admin-nav">
+            <a href="{{ url_for('admin') }}">All pickup dates</a>
+            <a href="{{ url_for('home') }}">Customer page</a>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="admin-messages" role="status">
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main>
+        <section class="admin-active-date">
+            {% if pickup_date == active_pickup_date %}
+            <p class="active-badge">This date is shown on the customer page</p>
+            {% else %}
+            <form method="post" action="{{ url_for('admin_activate_date', pickup_date=pickup_date) }}">
+                <button type="submit">Set as customer pickup date</button>
+            </form>
+            {% endif %}
+        </section>
+
+        <section class="admin-section">
+            <h2>Menu and order totals</h2>
+            {% if menu %}
+            <div class="admin-menu-list">
+                {% for item in menu %}
+                <article class="admin-menu-editor">
+                    <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ url_for('admin_update_menu_item', pickup_date=pickup_date, item_index=loop.index0) }}">
+                        <div class="form-field">
+                            <label for="menu-name-{{ loop.index0 }}">Menu name</label>
+                            <input id="menu-name-{{ loop.index0 }}" name="menu_name" type="text" value="{{ item['Menu Name'] }}" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="price-{{ loop.index0 }}">Price</label>
+                            <input id="price-{{ loop.index0 }}" name="price" type="number" min="0" step="0.01" value="{{ item['Price'] }}" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="vendor-{{ loop.index0 }}">Vendor</label>
+                            <input id="vendor-{{ loop.index0 }}" name="vendor_name" type="text" value="{{ item['Vendor Name'] }}" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="qty-min-{{ loop.index0 }}">Quantity minimum</label>
+                            <input id="qty-min-{{ loop.index0 }}" name="qty_min" type="number" min="0" step="1" value="{{ item.get('Qty Min') if item.get('Qty Min') is not none else '' }}">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="qty-max-{{ loop.index0 }}">Quantity maximum (blank means unlimited)</label>
+                            <input id="qty-max-{{ loop.index0 }}" name="qty_max" type="number" min="0" step="1" value="{{ item.get('Qty Max') if item.get('Qty Max') is not none else '' }}">
+                        </div>
+
+                        <div class="form-field">
+                            <label for="qty-ordered-{{ loop.index0 }}">Total ordered</label>
+                            <input id="qty-ordered-{{ loop.index0 }}" name="qty_ordered" type="number" min="0" step="1" value="{{ item.get('Qty Ordered', 0) }}" required>
+                            {% if item.get('Qty Remaining') is not none %}
+                            <small>{{ item['Qty Remaining'] }} remaining</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-field">
+                            <label for="image-{{ loop.index0 }}">Replace image</label>
+                            <input id="image-{{ loop.index0 }}" name="image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                            {% if item.get('Picture URL') %}
+                            <small>Current image is saved unless you choose a replacement.</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-field form-field-wide">
+                            <label for="details-{{ loop.index0 }}">Details</label>
+                            <textarea id="details-{{ loop.index0 }}" name="details" rows="2">{{ item.get('Details', '') }}</textarea>
+                        </div>
+
+                        <div class="form-actions form-field-wide">
+                            <button type="submit">Save changes</button>
+                        </div>
+                    </form>
+                    <form class="delete-menu-form" method="post" data-confirm="Remove {{ item['Menu Name'] }} from this pickup date?" action="{{ url_for('admin_delete_menu_item', pickup_date=pickup_date, item_index=loop.index0) }}">
+                        <button type="submit" class="delete-button">Remove menu item</button>
+                    </form>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No menu items have been added for this pickup date.</p>
+            {% endif %}
+        </section>
+
+        <section class="admin-section">
+            <h2>Add a menu item</h2>
+            <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ url_for('admin_add_menu_item', pickup_date=pickup_date) }}">
+                <div class="form-field">
+                    <label for="new-menu-name">Menu name</label>
+                    <input id="new-menu-name" name="menu_name" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label for="new-price">Price</label>
+                    <input id="new-price" name="price" type="number" min="0" step="0.01" required>
+                </div>
+                <div class="form-field">
+                    <label for="new-vendor">Vendor</label>
+                    <input id="new-vendor" name="vendor_name" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label for="new-qty-min">Quantity minimum (optional)</label>
+                    <input id="new-qty-min" name="qty_min" type="number" min="0" step="1">
+                </div>
+                <div class="form-field">
+                    <label for="new-qty-max">Quantity maximum</label>
+                    <input id="new-qty-max" name="qty_max" type="number" min="0" step="1">
+                </div>
+                <div class="form-field">
+                    <label for="new-image">Image upload</label>
+                    <input id="new-image" name="image" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                    <small>JPG, PNG, or WebP. Maximum 5 MB.</small>
+                </div>
+                <div class="form-field form-field-wide">
+                    <label for="new-details">Details</label>
+                    <textarea id="new-details" name="details" rows="3"></textarea>
+                </div>
+                <div class="form-actions form-field-wide">
+                    <button type="submit">Add menu item</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

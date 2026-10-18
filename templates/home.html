@@ -1,3 +1,89 @@
-<h1>MUDIKA PO</h1>
-<h2>Pick-up on Sunday, Nov 16, 2025</h2>
-<p>This is the homepage.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+</head>
+<body>
+
+    <h1>MUDIKA PO</h1>
+    <p>Pick-up on {{ pickup_date }}</p>
+    <p>Contact info: ...</p>
+    <p><a href="{{ url_for('admin') }}">Admin</a></p>
+
+    <hr>
+
+    <form class="customer-order-form" action="{{ url_for('submit_order') }}" method="post">
+    <div class="customer-details">
+        <div class="customer-field">
+            <label for="customer-name">Name <span class="required-mark" aria-hidden="true">*</span></label>
+            <input id="customer-name" name="customer_name" type="text" autocomplete="name" required>
+            <small>First and Last Name</small>
+        </div>
+        <div class="customer-field">
+            <label for="customer-email">Email <span class="required-mark" aria-hidden="true">*</span></label>
+            <input id="customer-email" name="customer_email" type="email" autocomplete="email" required>
+            <small>example@example.com</small>
+        </div>
+        <div class="customer-field">
+            <label for="customer-phone">Phone Number (Optional)</label>
+            <input id="customer-phone" name="customer_phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000">
+        </div>
+    </div>
+    <hr>
+
+    <h2>Current Menu</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="order-messages" role="status">
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    <div class="menu-grid">
+        {% for item in menu %}
+        <div class="menu-item{% if item.get('Qty Remaining') == 0 %} menu-item-sold-out{% endif %}" data-price="{{ item['Price'] }}">
+            <div class="menu-item-image-container">
+                <img src="{{ item.get('Picture URL') or 'https://via.placeholder.com/200' }}" alt="{{ item['Menu Name'] }}">
+            </div>
+            <div class="menu-item-info-container">
+                <h3>{{ item['Menu Name'] }} | Price: ${{ item['Price'] }}</h3>
+                <p>Vendor: {{ item['Vendor Name'] }}</p>
+                {% if item.get('Details') %}
+                <p>{{ item['Details'] }}</p>
+                {% endif %}
+                {% if item.get('Qty Remaining') is not none and item['Qty Remaining'] <= 10 %}
+                <p class="stock-remaining{% if item['Qty Remaining'] == 0 %} stock-sold-out{% endif %}">
+                    {% if item['Qty Remaining'] == 0 %}
+                    SOLD OUT
+                    {% else %}
+                    {{ item['Qty Remaining'] }} left remaining
+                    {% endif %}
+                </p>
+                {% endif %}
+            </div>
+            <div class="quantity-control">
+                <button type="button" class="quantity-minus" aria-label="Decrease {{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>-</button>
+                <input type="number" name="quantity_{{ loop.index0 }}" value="0" min="0" max="{{ item.get('Qty Remaining') if item.get('Qty Remaining') is not none else '' }}" step="1" class="quantity-input" aria-label="{{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>
+                <button type="button" class="quantity-plus" aria-label="Increase {{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>+</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <hr>
+    <div class="order-summary">
+        <button type="submit" class="order-submit">Submit order</button>
+        <div class="order-total" aria-live="polite">
+            <strong>Total</strong>
+            <span id="order-total-amount">$0.00</span>
+        </div>
+    </div>
+    </form>
+
+</body>
+</html>
