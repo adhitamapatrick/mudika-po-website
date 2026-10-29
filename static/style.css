@@ -2,13 +2,46 @@
 body {
   font-family: sans-serif;
   margin: 0;
-  padding: 2em 10%;
+  padding: 2em 15%;
+}
+
+.customer-page {
+  min-height: 100vh;
+  padding: 2em 17.25%;
+  box-sizing: border-box;
+  background: #E3ECE2;
+}
+
+.customer-logo {
+  display: block;
+  width: 180px;
+  max-width: 45vw;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto 20px;
+}
+
+.customer-frame {
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(24px, 3vw, 48px);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.customer-frame > h1 {
+  margin-top: 0;
+  text-align: center;
+}
+
+.pickup-schedule {
+  text-align: center;
 }
 
 /* Container holding all menu items */
 .menu-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
@@ -104,7 +137,7 @@ body {
 
 .customer-details {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   max-width: 960px;
   padding: 16px 0 24px;
@@ -197,6 +230,20 @@ body {
   border-bottom: 1px solid #ddd;
 }
 
+.pickup-date-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pickup-date-actions form {
+  margin: 0;
+}
+
+.pickup-date-actions .delete-button {
+  padding: 7px 10px;
+}
+
 .active-badge {
   display: inline-block;
   margin-left: 8px;
@@ -227,6 +274,17 @@ body {
 .admin-active-date {
   padding: 16px 0;
   border-bottom: 1px solid #ddd;
+}
+
+.schedule-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.schedule-form .form-actions {
+  grid-column: 1 / -1;
 }
 
 .admin-active-date p {
@@ -283,7 +341,8 @@ body {
 }
 
 .form-field input,
-.form-field textarea {
+.form-field textarea,
+.form-field select {
   box-sizing: border-box;
   width: 100%;
   padding: 10px;
@@ -325,7 +384,7 @@ body {
   background: #fff0f0;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .customer-details {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -357,13 +416,25 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .schedule-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .schedule-form .form-actions {
+    grid-column: auto;
+  }
+
   .admin-dates-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
 
-  .pickup-date-list li {
+  .pickup-date-list li,
+  .pickup-date-actions {
     align-items: flex-start;
+  }
+
+  .pickup-date-list li {
     flex-direction: column;
   }
 

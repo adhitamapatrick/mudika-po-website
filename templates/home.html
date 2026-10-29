@@ -7,12 +7,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
 </head>
-<body>
-
+<body class="customer-page">
+    <img class="customer-logo" src="{{ url_for('static', filename='images/logo_mudika.png') }}" alt="Mudika logo">
+    <main class="customer-frame">
     <h1>MUDIKA PO</h1>
-    <p>Pick-up on {{ pickup_date }}</p>
+    <p class="pickup-schedule">
+        Open order until <strong>{{ close_order_date }}</strong>.<br>
+        Pick up on <strong>{{ pickup_date }}</strong> from 3.30 - 4.30 PM at <strong>{{ pickup_location or 'Pickup location not set' }}</strong>
+    </p>
     <p>Contact info: ...</p>
-    <p><a href="{{ url_for('admin') }}">Admin</a></p>
 
     <hr>
 
@@ -24,13 +27,8 @@
             <small>First and Last Name</small>
         </div>
         <div class="customer-field">
-            <label for="customer-email">Email <span class="required-mark" aria-hidden="true">*</span></label>
-            <input id="customer-email" name="customer_email" type="email" autocomplete="email" required>
-            <small>example@example.com</small>
-        </div>
-        <div class="customer-field">
-            <label for="customer-phone">Phone Number (Optional)</label>
-            <input id="customer-phone" name="customer_phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000">
+            <label for="customer-phone">Phone Number <span class="required-mark" aria-hidden="true">*</span></label>
+            <input id="customer-phone" name="customer_phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000" required>
         </div>
     </div>
     <hr>
@@ -84,6 +82,6 @@
         </div>
     </div>
     </form>
-
+    </main>
 </body>
 </html>

@@ -21,6 +21,11 @@ DATA_DIR = PROJECT_DIR / "instance"
 DATA_FILE = DATA_DIR / "menu.json"
 UPLOAD_DIR = PROJECT_DIR / "static" / "uploads"
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+PICKUP_LOCATIONS = (
+    "St. Josephine Bakhita Parish, Mississauga",
+    "Our Lady of Parish, Scarborough",
+    "St. Helen's Parish, Toronto",
+)
 SPREADSHEET_ID = "1BBk_33lKRMkxpFKyY3-lx-mpGxGWiPG7kBVqNNoNnoA"
 DATA_LOCK = threading.Lock()
 
@@ -47,12 +52,20 @@ def load_site_data():
         site_data = json.load(data_file)
 
     if "pickup_dates" in site_data:
+        for pickup_date, date_data in site_data["pickup_dates"].items():
+            date_data.setdefault("close_order_date", pickup_date)
+            date_data.setdefault("pickup_location", "")
+            date_data.setdefault("menu", [])
         return site_data
 
     pickup_date = site_data.get("pickup_date", DEFAULT_SITE_DATA["pickup_date"])
     return {
         "active_pickup_date": pickup_date,
-        "pickup_dates": {pickup_date: {"menu": site_data.get("menu", [])}},
+        "pickup_dates": {pickup_date: {
+            "close_order_date": pickup_date,
+            "pickup_location": "",
+            "menu": site_data.get("menu", []),
+        }},
     }
 
 
@@ -64,6 +77,10 @@ def save_site_data(site_data):
 
 def allowed_image(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTENSIONS
+
+
+def format_schedule_date(value):
+    return date.fromisoformat(value).strftime("%a, %b %d").replace(" 0", " ")
 
 
 def item_unit_price(value):
@@ -161,8 +178,10 @@ def home():
     site_data = load_site_data()
     pickup_date_key = site_data["active_pickup_date"]
     pickup_date = date.fromisoformat(pickup_date_key)
+    pickup_schedule = site_data["pickup_dates"][pickup_date_key]
+    close_order_date = format_schedule_date(pickup_schedule["close_order_date"])
     menu = []
-    for item in site_data["pickup_dates"][pickup_date_key]["menu"]:
+    for item in pickup_schedule["menu"]:
         menu_item = dict(item)
         ordered = int(menu_item.get("Qty Ordered", 0))
         maximum = menu_item.get("Qty Max")
@@ -172,16 +191,20 @@ def home():
     return render_template(
         "home.html",
         menu=menu,
-        pickup_date=pickup_date.strftime("%A, %b %d, %Y").replace(" 0", " "),
+        pickup_date=pickup_date.strftime("%a, %b %d").replace(" 0", " "),
+        close_order_date=close_order_date,
+        pickup_location=pickup_schedule["pickup_location"],
     )
 
 
 @app.route("/order", methods=["POST"])
 def submit_order():
     customer_name = request.form.get("customer_name", "").strip()
-    customer_email = request.form.get("customer_email", "").strip()
-    if not customer_name or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", customer_email):
-        flash("Enter your name and a valid email address to submit your order.", "error")
+    customer_phone = request.form.get("customer_phone", "")
+    phone_digits = re.sub(r"\D", "", customer_phone)
+    valid_phone = len(phone_digits) == 10 or (len(phone_digits) == 11 and phone_digits.startswith("1"))
+    if not customer_name or not valid_phone:
+        flash("Enter your name and a valid 10-digit phone number to submit your order.", "error")
         return redirect(url_for("home"))
 
     with DATA_LOCK:
@@ -254,7 +277,11 @@ def admin():
 
         with DATA_LOCK:
             site_data = load_site_data()
-            site_data["pickup_dates"].setdefault(pickup_date, {"menu": []})
+            site_data["pickup_dates"].setdefault(pickup_date, {
+                "close_order_date": pickup_date,
+                "pickup_location": "",
+                "menu": [],
+            })
             if not site_data.get("active_pickup_date"):
                 site_data["active_pickup_date"] = pickup_date
             save_site_data(site_data)
@@ -296,6 +323,9 @@ def admin_manage_date(pickup_date):
         pickup_date=pickup_date,
         active_pickup_date=site_data["active_pickup_date"],
         menu=menu,
+        close_order_date=site_data["pickup_dates"][pickup_date]["close_order_date"],
+        pickup_location=site_data["pickup_dates"][pickup_date]["pickup_location"],
+        pickup_locations=PICKUP_LOCATIONS,
     )
 
 
@@ -309,6 +339,59 @@ def admin_activate_date(pickup_date):
         site_data["active_pickup_date"] = pickup_date
         save_site_data(site_data)
     flash("This menu is now active on the customer page.", "success")
+    return redirect(url_for("admin_manage_date", pickup_date=pickup_date))
+
+
+@app.route("/admin/<pickup_date>/delete", methods=["POST"])
+def admin_delete_pickup_date(pickup_date):
+    with DATA_LOCK:
+        site_data = load_site_data()
+        pickup_dates = site_data["pickup_dates"]
+
+        if pickup_date not in pickup_dates:
+            flash("That pickup date does not exist.", "error")
+            return redirect(url_for("admin"))
+
+        if len(pickup_dates) == 1:
+            flash("Keep at least one pickup date.", "error")
+            return redirect(url_for("admin"))
+
+        del pickup_dates[pickup_date]
+        if site_data["active_pickup_date"] == pickup_date:
+            site_data["active_pickup_date"] = max(pickup_dates)
+        save_site_data(site_data)
+
+    flash(f"Pickup date {pickup_date} was removed.", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/<pickup_date>/schedule", methods=["POST"])
+def admin_update_schedule(pickup_date):
+    close_order_date = request.form.get("close_order_date", "")
+    pickup_location = request.form.get("pickup_location", "")
+
+    try:
+        close_date = date.fromisoformat(close_order_date)
+        pickup_date_value = date.fromisoformat(pickup_date)
+        if close_date > pickup_date_value:
+            raise ValueError
+        if pickup_location not in PICKUP_LOCATIONS:
+            raise ValueError
+    except ValueError:
+        flash("Choose a valid close date and pickup location.", "error")
+        return redirect(url_for("admin_manage_date", pickup_date=pickup_date))
+
+    with DATA_LOCK:
+        site_data = load_site_data()
+        if pickup_date not in site_data["pickup_dates"]:
+            flash("That pickup date does not exist.", "error")
+            return redirect(url_for("admin"))
+        schedule = site_data["pickup_dates"][pickup_date]
+        schedule["close_order_date"] = close_order_date
+        schedule["pickup_location"] = pickup_location
+        save_site_data(site_data)
+
+    flash("Pickup schedule was updated.", "success")
     return redirect(url_for("admin_manage_date", pickup_date=pickup_date))
 
 

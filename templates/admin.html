@@ -40,6 +40,28 @@
             {% endif %}
         </section>
 
+        <section class="admin-section schedule-section">
+            <h2>Order and pickup schedule</h2>
+            <form class="schedule-form" method="post" action="{{ url_for('admin_update_schedule', pickup_date=pickup_date) }}">
+                <div class="form-field">
+                    <label for="close-order-date">Close order date</label>
+                    <input id="close-order-date" name="close_order_date" type="date" value="{{ close_order_date }}" max="{{ pickup_date }}" required>
+                </div>
+                <div class="form-field">
+                    <label for="pickup-location">Pickup location</label>
+                    <select id="pickup-location" name="pickup_location" required>
+                        <option value="" disabled {% if not pickup_location %}selected{% endif %}>Select a location</option>
+                        {% for location in pickup_locations %}
+                        <option value="{{ location }}" {% if pickup_location == location %}selected{% endif %}>{{ location }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save schedule</button>
+                </div>
+            </form>
+        </section>
+
         <section class="admin-section">
             <h2>Menu and order totals</h2>
             {% if menu %}

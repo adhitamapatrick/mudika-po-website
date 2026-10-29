@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pickup dates | Mudika PO</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
 </head>
 <body class="admin-page">
     <header class="admin-header">
@@ -38,7 +39,12 @@
                         <span class="active-badge">Customer menu</span>
                         {% endif %}
                     </div>
-                    <a href="{{ url_for('admin_manage_date', pickup_date=pickup_date) }}">Manage</a>
+                    <div class="pickup-date-actions">
+                        <a href="{{ url_for('admin_manage_date', pickup_date=pickup_date) }}">Manage</a>
+                        <form method="post" data-confirm="Remove pickup date {{ pickup_date }} and all of its menu items?" action="{{ url_for('admin_delete_pickup_date', pickup_date=pickup_date) }}">
+                            <button type="submit" class="delete-button">Remove</button>
+                        </form>
+                    </div>
                 </li>
                 {% endfor %}
             </ul>
