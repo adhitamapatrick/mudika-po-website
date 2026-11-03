@@ -6,6 +6,7 @@
     <title>Mudika PO</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='order_confirmation.js') }}" defer></script>
 </head>
 <body class="customer-page">
     <img class="customer-logo" src="{{ url_for('static', filename='images/logo_mudika.png') }}" alt="Mudika logo">
@@ -31,6 +32,19 @@
             <input id="customer-phone" name="customer_phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000" required>
         </div>
     </div>
+    <fieldset class="customer-payment">
+        <legend>Payment Method <span class="required-mark" aria-hidden="true">*</span></legend>
+        <div class="payment-options">
+            <label>
+                <input type="radio" name="payment_method" value="etransfer" required>
+                <span>E-transfer to <strong>mudika@gmail.com</strong></span>
+            </label>
+            <label>
+                <input type="radio" name="payment_method" value="cash" required>
+                <span>Cash</span>
+            </label>
+        </div>
+    </fieldset>
     <hr>
 
     <h2>Current Menu</h2>
@@ -86,6 +100,48 @@
         </div>
     </div>
     </form>
+    <dialog class="order-confirmation" id="order-confirmation" aria-labelledby="confirmation-title">
+        <div class="receipt-modal">
+            <header class="receipt-header">
+                <h2 id="confirmation-title">Review your order</h2>
+            </header>
+
+            <section class="receipt-section">
+                <h3>Your Information</h3>
+                <dl class="receipt-information">
+                    <div>
+                        <dt>Name</dt>
+                        <dd id="receipt-name"></dd>
+                    </div>
+                    <div>
+                        <dt>Phone Number</dt>
+                        <dd id="receipt-phone"></dd>
+                    </div>
+                    <div>
+                        <dt>Payment Method</dt>
+                        <dd id="receipt-payment"></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="receipt-section">
+                <h3>Your Orders</h3>
+                <ul class="receipt-items" id="receipt-items"></ul>
+                <div class="receipt-total">
+                    <strong>Total</strong>
+                    <strong id="receipt-total">$0.00</strong>
+                </div>
+            </section>
+
+            <footer class="receipt-footer">
+                <p>Are you sure these orders are correct?</p>
+                <div class="receipt-actions">
+                    <button type="button" class="receipt-cancel" data-cancel-order>Cancel</button>
+                    <button type="button" class="receipt-submit" data-submit-order>Yes, submit now</button>
+                </div>
+            </footer>
+        </div>
+    </dialog>
     </main>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import re
@@ -6,10 +7,12 @@ import secrets
 import threading
 from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from time import time
 from uuid import uuid4
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -28,6 +31,22 @@ PICKUP_LOCATIONS = (
 )
 SPREADSHEET_ID = "1BBk_33lKRMkxpFKyY3-lx-mpGxGWiPG7kBVqNNoNnoA"
 DATA_LOCK = threading.Lock()
+ORDER_RECEIPTS = {}
+ORDER_RECEIPT_LOCK = threading.Lock()
+ORDER_RECEIPT_TTL_SECONDS = 30 * 60
+PAYMENT_METHODS = {
+    "etransfer": "E-transfer to mudika@gmail.com",
+    "cash": "Cash",
+}
+
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = DATA_DIR / "app.log"
+if not any(getattr(handler, "baseFilename", None) == str(LOG_FILE) for handler in app.logger.handlers):
+    log_handler = RotatingFileHandler(LOG_FILE, maxBytes=1_000_000, backupCount=2, encoding="utf-8")
+    log_handler.setLevel(logging.INFO)
+    log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    app.logger.addHandler(log_handler)
+app.logger.setLevel(logging.INFO)
 
 DEFAULT_SITE_DATA = {
     "pickup_date": date.today().isoformat(),
@@ -94,10 +113,47 @@ def item_unit_price(value):
         return Decimal(match.group())
 
 
-def append_order_rows_to_sheet(rows):
+def get_google_credentials_file():
     credentials_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     if not credentials_file:
-        raise RuntimeError("Google Sheets credentials are not configured.")
+        credentials_file = str(DATA_DIR / "google-service-account.json")
+    if not Path(credentials_file).is_file():
+        raise RuntimeError("Google Sheets credential file was not found.")
+    return credentials_file
+
+
+def store_order_receipt(receipt):
+    current_time = time()
+    with ORDER_RECEIPT_LOCK:
+        expired_receipts = [
+            receipt_id
+            for receipt_id, entry in ORDER_RECEIPTS.items()
+            if entry["expires_at"] <= current_time
+        ]
+        for receipt_id in expired_receipts:
+            ORDER_RECEIPTS.pop(receipt_id, None)
+
+        receipt_id = secrets.token_urlsafe(32)
+        ORDER_RECEIPTS[receipt_id] = {
+            "receipt": receipt,
+            "expires_at": current_time + ORDER_RECEIPT_TTL_SECONDS,
+        }
+    return receipt_id
+
+
+def get_order_receipt(receipt_id):
+    if not receipt_id:
+        return None
+    with ORDER_RECEIPT_LOCK:
+        entry = ORDER_RECEIPTS.get(receipt_id)
+        if not entry or entry["expires_at"] <= time():
+            ORDER_RECEIPTS.pop(receipt_id, None)
+            return None
+        return entry["receipt"]
+
+
+def append_order_rows_to_sheet(rows):
+    credentials_file = get_google_credentials_file()
 
     from google.oauth2.service_account import Credentials
     from googleapiclient.discovery import build
@@ -202,10 +258,11 @@ def home():
 def submit_order():
     customer_name = request.form.get("customer_name", "").strip()
     customer_phone = request.form.get("customer_phone", "")
+    payment_method = request.form.get("payment_method", "")
     phone_digits = re.sub(r"\D", "", customer_phone)
     valid_phone = len(phone_digits) == 10 or (len(phone_digits) == 11 and phone_digits.startswith("1"))
-    if not customer_name or not valid_phone:
-        flash("Enter your name and a valid 10-digit phone number to submit your order.", "error")
+    if not customer_name or not valid_phone or payment_method not in PAYMENT_METHODS:
+        flash("Enter your name, a valid 10-digit phone number, and choose a payment method.", "error")
         return redirect(url_for("home"))
 
     with DATA_LOCK:
@@ -236,6 +293,8 @@ def submit_order():
         submitted_date = date.today()
         order_method = f"Web form - {submitted_date.strftime('%m %d')}"
         order_rows = []
+        receipt_items = []
+        receipt_total = Decimal("0.00")
         try:
             for item, quantity in zip(menu, requested_quantities):
                 if quantity == 0:
@@ -243,6 +302,7 @@ def submit_order():
                 line_total = (item_unit_price(item["Price"]) * quantity).quantize(
                     Decimal("0.01"), rounding=ROUND_HALF_UP
                 )
+                receipt_total += line_total
                 order_rows.append([
                     customer_name,
                     item["Menu Name"],
@@ -252,6 +312,11 @@ def submit_order():
                     order_method,
                     float(line_total),
                 ])
+                receipt_items.append({
+                    "name": item["Menu Name"],
+                    "quantity": quantity,
+                    "line_total": f"{line_total:.2f}",
+                })
             append_order_rows_to_sheet(order_rows)
         except Exception:
             app.logger.exception("Unable to append submitted order to Google Sheets")
@@ -262,8 +327,31 @@ def submit_order():
             item["Qty Ordered"] = int(item.get("Qty Ordered", 0)) + quantity
         save_site_data(site_data)
 
-    flash("Your order has been submitted.", "success")
-    return redirect(url_for("home"))
+        pickup_schedule = site_data["pickup_dates"][pickup_date]
+        receipt = {
+            "customer_name": customer_name,
+            "customer_phone": customer_phone.strip(),
+            "payment_method": payment_method,
+            "payment_label": PAYMENT_METHODS[payment_method],
+            "items": receipt_items,
+            "total": f"{receipt_total:.2f}",
+            "close_order_date": format_schedule_date(pickup_schedule["close_order_date"]),
+            "pickup_date": format_schedule_date(pickup_date),
+            "pickup_location": pickup_schedule["pickup_location"],
+        }
+        session["order_receipt_id"] = store_order_receipt(receipt)
+
+    return redirect(url_for("order_success"))
+
+
+@app.route("/order/confirmation")
+def order_success():
+    receipt = get_order_receipt(session.get("order_receipt_id"))
+    if not receipt:
+        session.pop("order_receipt_id", None)
+        flash("Your receipt has expired. Please contact us if you need your order details.", "error")
+        return redirect(url_for("home"))
+    return render_template("order_success.html", receipt=receipt)
 
 
 @app.route("/admin", methods=["GET", "POST"])
