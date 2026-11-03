@@ -50,10 +50,11 @@
                 <img src="{{ item.get('Picture URL') or 'https://via.placeholder.com/200' }}" alt="{{ item['Menu Name'] }}">
             </div>
             <div class="menu-item-info-container">
-                <h3>{{ item['Menu Name'] }} | Price: ${{ item['Price'] }}</h3>
-                <p>Vendor: {{ item['Vendor Name'] }}</p>
+                <h3 class="menu-item-name">{{ item['Menu Name'] }}</h3>
+                <p class="menu-item-vendor">Vendor: {{ item['Vendor Name'] }}</p>
+                <p class="menu-item-price">Price: ${{ item['Display Price'] }}</p>
                 {% if item.get('Details') %}
-                <p>{{ item['Details'] }}</p>
+                <p class="menu-item-details"><em>{{ item['Details'] }}</em></p>
                 {% endif %}
                 {% if item.get('Qty Remaining') is not none and item['Qty Remaining'] <= 10 %}
                 <p class="stock-remaining{% if item['Qty Remaining'] == 0 %} stock-sold-out{% endif %}">
@@ -66,9 +67,12 @@
                 {% endif %}
             </div>
             <div class="quantity-control">
-                <button type="button" class="quantity-minus" aria-label="Decrease {{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>-</button>
-                <input type="number" name="quantity_{{ loop.index0 }}" value="0" min="0" max="{{ item.get('Qty Remaining') if item.get('Qty Remaining') is not none else '' }}" step="1" class="quantity-input" aria-label="{{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>
-                <button type="button" class="quantity-plus" aria-label="Increase {{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>+</button>
+                <label class="quantity-label" for="quantity-{{ loop.index0 }}">Quantity</label>
+                <div class="quantity-adjuster">
+                    <button type="button" class="quantity-minus" aria-label="Decrease {{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>-</button>
+                    <input id="quantity-{{ loop.index0 }}" type="number" name="quantity_{{ loop.index0 }}" value="0" min="0" max="{{ item.get('Qty Remaining') if item.get('Qty Remaining') is not none else '' }}" step="1" class="quantity-input" aria-label="{{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>
+                    <button type="button" class="quantity-plus" aria-label="Increase {{ item['Menu Name'] }} quantity" {% if item.get('Qty Remaining') == 0 %}disabled{% endif %}>+</button>
+                </div>
             </div>
         </div>
         {% endfor %}

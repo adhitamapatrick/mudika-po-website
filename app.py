@@ -183,6 +183,7 @@ def home():
     menu = []
     for item in pickup_schedule["menu"]:
         menu_item = dict(item)
+        menu_item["Display Price"] = f"{item_unit_price(menu_item['Price']):.2f}"
         ordered = int(menu_item.get("Qty Ordered", 0))
         maximum = menu_item.get("Qty Max")
         menu_item["Qty Remaining"] = max(0, int(maximum) - ordered) if maximum is not None else None

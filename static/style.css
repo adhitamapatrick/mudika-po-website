@@ -70,13 +70,50 @@ body {
   border-radius: 6px;
 }
 
+.menu-item-name {
+  margin-bottom: 0.35em;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.menu-item-vendor {
+  margin-top: 4px;
+  margin-bottom: 0;
+  color: #4B5563;
+  font-size: 14px;
+}
+
+.menu-item-price {
+  margin-top: 2em;
+  color: #047857;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.menu-item-details {
+  font-size: 15px;
+}
+
 /* Quantity controls layout */
 .quantity-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.quantity-label {
+  color: #555;
+  font-size: 0.875rem;
+}
+
+.quantity-adjuster {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .quantity-input {
@@ -148,6 +185,10 @@ body {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.customer-field label {
+  font-weight: 600;
 }
 
 .customer-field small {
