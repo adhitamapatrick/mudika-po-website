@@ -1,7 +1,28 @@
+// Cloudflare settings. See README "Deploy to Cloudflare".
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mudika-po-website",
   "main": "src/worker.py",
   "compatibility_date": "2026-11-18",
-  "compatibility_flags": ["python_workers"]
+  "compatibility_flags": ["python_workers"],
+
+  // CSS, JavaScript and the logo are served straight from the public/ folder
+  "assets": {
+    "directory": "./public"
+  },
+
+  // The database. Replace database_id with the ID shown in the Cloudflare dashboard
+  // (Storage & Databases > D1 > mudika-po).
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mudika-po",
+      "database_id": "REPLACE-WITH-YOUR-D1-DATABASE-ID"
+    }
+  ],
+
+  // Lets you see errors under Workers & Pages > mudika-po-website > Logs
+  "observability": {
+    "enabled": true
+  }
 }

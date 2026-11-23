@@ -1,11 +1,10 @@
 [project]
 name = "mudika-po-website"
-version = "0.1.0"
-requires-python = ">=3.13"
+version = "0.2.0"
+requires-python = ">=3.12"
 dependencies = [
     "flask>=3.0,<4",
-    "google-api-python-client>=2.149,<3",
-    "google-auth>=2.35,<3",
+    "requests>=2.32",
 ]
 
 [dependency-groups]

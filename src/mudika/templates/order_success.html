@@ -11,45 +11,61 @@
     <img class="customer-logo" src="{{ url_for('static', filename='images/logo_mudika.png') }}" alt="Mudika logo">
     <main class="customer-frame receipt-page">
         <h1>MUDIKA PO</h1>
+
+        {# ---------- Pickup info and contact ---------- #}
+        {% if schedule %}
         <p class="pickup-schedule">
-            Open order until <strong>{{ receipt.close_order_date }}</strong>.<br>
-            Pick up on <strong>{{ receipt.pickup_date }}</strong> from 3.30 - 4.30 PM at <strong>{{ receipt.pickup_location or 'Pickup location not set' }}</strong>
+            Open order until <strong>{{ pretty_date(schedule.close_order_date) }}</strong>.<br>
+            Pick up on <strong>{{ pretty_date(schedule.pickup_date) }}</strong> from 3.30 - 4.30 PM at <strong>{{ schedule.pickup_location or 'Pickup location not set' }}</strong>
         </p>
-        <p>Contact info: ...</p>
+        {% endif %}
+        {% if settings.contact_info %}
+        <p class="contact-info">Contact info: {{ settings.contact_info }}</p>
+        {% endif %}
 
         <hr>
 
+        {# ---------- Thank-you message ---------- #}
         <section class="success-message">
-            <h2>Thank you for ordering, {{ receipt.customer_name }}.</h2>
+            <h2>Thank you for ordering, {{ order.customer_name }}.</h2>
+            <p>Your order number is <strong>{{ order.reference }}</strong>.</p>
             <p>For the last step, review your orders below. Save this receipt with a screenshot, or select “Print / Save as PDF” and choose “Save as PDF” in the print dialog.</p>
             <button type="button" class="receipt-print" data-print-receipt>Print / Save as PDF</button>
         </section>
 
+        {# ---------- Customer details ---------- #}
         <section class="receipt-page-section">
             <h2>Your Information</h2>
             <dl class="receipt-information">
                 <div>
                     <dt>Name</dt>
-                    <dd>{{ receipt.customer_name }}</dd>
+                    <dd>{{ order.customer_name }}</dd>
                 </div>
                 <div>
                     <dt>Phone Number</dt>
-                    <dd>{{ receipt.customer_phone }}</dd>
+                    <dd>{{ order.customer_phone }}</dd>
                 </div>
                 <div>
                     <dt>Payment Method</dt>
-                    <dd>{{ receipt.payment_label }}</dd>
+                    <dd>{{ payment_label }}</dd>
                 </div>
+                {% if order.additional_info %}
+                <div>
+                    <dt>Additional information</dt>
+                    <dd class="receipt-additional-info">{{ order.additional_info }}</dd>
+                </div>
+                {% endif %}
             </dl>
         </section>
 
+        {# ---------- Items and total ---------- #}
         <section class="receipt-page-section">
             <h2>Your Orders</h2>
             <ul class="receipt-items">
-                {% for item in receipt['items'] %}
+                {% for item in order['items'] %}
                 <li class="receipt-item">
                     <div class="receipt-item-description">
-                        <span class="receipt-item-name">{{ item.name }}</span>
+                        <span class="receipt-item-name">{{ item.item_name }}</span>
                         <span class="receipt-item-quantity">{{ item.quantity }} {{ 'pc' if item.quantity == 1 else 'pcs' }}</span>
                     </div>
                     <strong class="receipt-item-price">${{ item.line_total }}</strong>
@@ -58,18 +74,19 @@
             </ul>
             <div class="receipt-total">
                 <strong>Total</strong>
-                <strong>${{ receipt.total }}</strong>
+                <strong>${{ order.total }}</strong>
             </div>
         </section>
 
+        {# ---------- Payment reminder ---------- #}
         <p class="payment-reminder">
-            {% if receipt.payment_method == 'etransfer' %}
-            Don't forget to e-transfer ${{ receipt.total }} to mudika@gmail.com before pick-up.
+            {% if order.payment_method == 'etransfer' %}
+            Don't forget to e-transfer ${{ order.total }}{% if settings.etransfer_email %} to {{ settings.etransfer_email }}{% endif %} before pick-up.
             {% else %}
-            Don't forget to prepare cash ${{ receipt.total }} during pick-up.
+            Don't forget to prepare cash ${{ order.total }} during pick-up.
             {% endif %}
         </p>
-        <a class="back-to-main" href="{{ url_for('home') }}">Back to main page</a>
+        <a class="back-to-main" href="{{ url_for('customer.home') }}">Back to main page</a>
     </main>
 </body>
 </html>

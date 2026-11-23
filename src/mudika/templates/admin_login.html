@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Admin login | Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-page">
+    <main class="admin-login">
+        <section class="admin-section">
+            <p class="eyebrow">Mudika PO</p>
+            <h1>Admin login</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endwith %}
+
+            {% if password_configured %}
+            <form method="post">
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Log in</button>
+                </div>
+            </form>
+            {% else %}
+            <p class="message message-error">No admin password has been set yet. Add ADMIN_PASSWORD to your .env file (on your computer) or as a secret in Cloudflare.</p>
+            {% endif %}
+            <p><a href="{{ url_for('customer.home') }}">Back to customer page</a></p>
+        </section>
+    </main>
+</body>
+</html>
