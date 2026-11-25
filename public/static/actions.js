@@ -1,3 +1,4 @@
+// ---------- Running total on the customer page ----------
 const totalDisplay = document.querySelector('#order-total-amount');
 
 const updateOrderTotal = () => {
@@ -6,24 +7,20 @@ const updateOrderTotal = () => {
     }
 
     const total = [...document.querySelectorAll('.menu-item')].reduce((sum, menuItem) => {
-        const price = Number((menuItem.dataset.price || '').replace(/[^0-9.-]/g, ''));
+        const price = Number(menuItem.dataset.price) || 0;
         const quantity = Number(menuItem.querySelector('.quantity-input').value) || 0;
-        return sum + (Number.isFinite(price) ? price * quantity : 0);
+        return sum + price * quantity;
     }, 0);
 
-    totalDisplay.textContent = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    }).format(total);
+    totalDisplay.textContent = new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(total);
 };
 
+// ---------- + / - quantity buttons ----------
 document.querySelectorAll('.menu-item').forEach((menuItem) => {
     const quantityInput = menuItem.querySelector('.quantity-input');
     const minusButton = menuItem.querySelector('.quantity-minus');
     const plusButton = menuItem.querySelector('.quantity-plus');
-    const minimum = Number(quantityInput.min) || 0;
+    const minimum = Number(quantityInput.dataset.min) || 0;  // admin's "quantity minimum"
     const maximum = quantityInput.max === '' ? Infinity : Number(quantityInput.max);
 
     const setQuantity = (quantity) => {
@@ -59,6 +56,7 @@ document.querySelectorAll('.menu-item').forEach((menuItem) => {
 
 updateOrderTotal();
 
+// ---------- "Are you sure?" for admin delete buttons ----------
 document.querySelectorAll('form[data-confirm]').forEach((form) => {
     form.addEventListener('submit', (event) => {
         if (!window.confirm(form.dataset.confirm)) {

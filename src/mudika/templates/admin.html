@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Manage pickup | Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='admin_image_resize.js') }}" defer></script>
+</head>
+<body class="admin-page">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Mudika PO / Pickup date</p>
+            <h1>{{ schedule.pickup_date }}</h1>
+        </div>
+        <nav class="admin-nav">
+            <a href="{{ url_for('admin.dates') }}">All pickup dates</a>
+            <a href="{{ url_for('customer.home') }}">Customer page</a>
+            <form method="post" action="{{ url_for('admin.logout') }}">
+                <button type="submit" class="link-button">Log out</button>
+            </form>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="admin-messages" role="status">
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main>
+        {# ---------- Show this date to customers ---------- #}
+        <section class="admin-active-date">
+            {% if schedule.pickup_date == active_pickup_date %}
+            <p class="active-badge">This date is shown on the customer page</p>
+            {% else %}
+            <form method="post" action="{{ url_for('admin.activate_date', pickup_date=schedule.pickup_date) }}">
+                <button type="submit">Set as customer pickup date</button>
+            </form>
+            {% endif %}
+        </section>
+
+        {# ---------- Close date and pickup location ---------- #}
+        <section class="admin-section schedule-section">
+            <h2>Order and pickup schedule</h2>
+            <form class="schedule-form" method="post" action="{{ url_for('admin.update_schedule', pickup_date=schedule.pickup_date) }}">
+                <div class="form-field">
+                    <label for="close-order-date">Close order date</label>
+                    <input id="close-order-date" name="close_order_date" type="date" value="{{ schedule.close_order_date }}" max="{{ schedule.pickup_date }}" required>
+                    <small>Customers can order until the end of this day (Toronto time).</small>
+                </div>
+                <div class="form-field">
+                    <label for="pickup-location">Pickup location</label>
+                    <select id="pickup-location" name="pickup_location" required>
+                        <option value="" disabled {% if not schedule.pickup_location %}selected{% endif %}>Select a location</option>
+                        {% for location in pickup_locations %}
+                        <option value="{{ location }}" {% if schedule.pickup_location == location %}selected{% endif %}>{{ location }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit">Save schedule</button>
+                </div>
+            </form>
+        </section>
+
+        {# ---------- Orders for this pickup date ---------- #}
+        <section class="admin-section">
+            <h2>Orders ({{ orders|length }})</h2>
+            {% if orders %}
+            <p>Total: <strong>${{ '%.2f'|format(orders|sum(attribute='total_cents') / 100) }}</strong></p>
+            <div class="orders-table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Submitted</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Payment</th>
+                            <th>Items</th>
+                            <th>Additional info</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.reference }}</td>
+                            <td>{{ order.created_at[:16].replace('T', ' ') }}</td>
+                            <td>{{ order.customer_name }}</td>
+                            <td>{{ order.customer_phone }}</td>
+                            <td>{{ 'E-transfer' if order.payment_method == 'etransfer' else 'Cash' }}</td>
+                            <td>
+                                <ul>
+                                    {% for item in order['items'] %}
+                                    <li>{{ item.quantity }} × {{ item.item_name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td class="order-notes">{{ order.additional_info }}</td>
+                            <td>${{ order.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>No orders yet for this pickup date.</p>
+            {% endif %}
+        </section>
+
+        {# ---------- Existing menu items ---------- #}
+        <section class="admin-section">
+            <h2>Menu and order totals</h2>
+            {% if menu %}
+            <div class="admin-menu-list">
+                {% for item in menu %}
+                <article class="admin-menu-editor">
+                    {% if item.image_url %}
+                    <img class="admin-menu-thumbnail" src="{{ item.image_url }}" alt="">
+                    {% endif %}
+                    <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ url_for('admin.update_menu_item', pickup_date=schedule.pickup_date, item_id=item.id) }}">
+                        <div class="form-field">
+                            <label for="menu-name-{{ item.id }}">Menu name</label>
+                            <input id="menu-name-{{ item.id }}" name="menu_name" type="text" value="{{ item.name }}" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="price-{{ item.id }}">Price ($)</label>
+                            <input id="price-{{ item.id }}" name="price" type="number" min="0" step="0.01" value="{{ item.price }}" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="vendor-{{ item.id }}">Vendor</label>
+                            <input id="vendor-{{ item.id }}" name="vendor_name" type="text" value="{{ item.vendor }}" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="qty-min-{{ item.id }}">Quantity minimum</label>
+                            <input id="qty-min-{{ item.id }}" name="qty_min" type="number" min="0" step="1" value="{{ item.qty_min if item.qty_min is not none else '' }}">
+                        </div>
+                        <div class="form-field">
+                            <label for="qty-max-{{ item.id }}">Quantity maximum (blank means unlimited)</label>
+                            <input id="qty-max-{{ item.id }}" name="qty_max" type="number" min="0" step="1" value="{{ item.qty_max if item.qty_max is not none else '' }}">
+                        </div>
+                        <div class="form-field">
+                            <label for="qty-ordered-{{ item.id }}">Total ordered</label>
+                            <input id="qty-ordered-{{ item.id }}" name="qty_ordered" type="number" min="0" step="1" value="{{ item.qty_ordered }}" required>
+                            {% if item.qty_remaining is not none %}
+                            <small>{{ item.qty_remaining }} remaining</small>
+                            {% endif %}
+                        </div>
+                        <div class="form-field">
+                            <label for="image-{{ item.id }}">Replace image</label>
+                            <input id="image-{{ item.id }}" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+                            {% if item.image_url %}
+                            <small>Current image is kept unless you choose a replacement.</small>
+                            {% endif %}
+                        </div>
+                        <div class="form-field form-field-wide">
+                            <label for="details-{{ item.id }}">Details</label>
+                            <textarea id="details-{{ item.id }}" name="details" rows="2">{{ item.details }}</textarea>
+                        </div>
+                        <div class="form-actions form-field-wide">
+                            <button type="submit">Save changes</button>
+                        </div>
+                    </form>
+                    <form class="delete-menu-form" method="post" data-confirm="Remove {{ item.name }} from this pickup date?" action="{{ url_for('admin.delete_menu_item', pickup_date=schedule.pickup_date, item_id=item.id) }}">
+                        <button type="submit" class="delete-button">Remove menu item</button>
+                    </form>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No menu items have been added for this pickup date.</p>
+            {% endif %}
+        </section>
+
+        {# ---------- Add a new menu item ---------- #}
+        <section class="admin-section">
+            <h2>Add a menu item</h2>
+            <form class="admin-form" method="post" enctype="multipart/form-data" action="{{ url_for('admin.add_menu_item', pickup_date=schedule.pickup_date) }}">
+                <div class="form-field">
+                    <label for="new-menu-name">Menu name</label>
+                    <input id="new-menu-name" name="menu_name" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label for="new-price">Price ($)</label>
+                    <input id="new-price" name="price" type="number" min="0" step="0.01" required>
+                </div>
+                <div class="form-field">
+                    <label for="new-vendor">Vendor</label>
+                    <input id="new-vendor" name="vendor_name" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label for="new-qty-min">Quantity minimum (optional)</label>
+                    <input id="new-qty-min" name="qty_min" type="number" min="0" step="1">
+                </div>
+                <div class="form-field">
+                    <label for="new-qty-max">Quantity maximum (blank means unlimited)</label>
+                    <input id="new-qty-max" name="qty_max" type="number" min="0" step="1">
+                </div>
+                <div class="form-field">
+                    <label for="new-image">Image upload</label>
+                    <input id="new-image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+                    <small>JPG, PNG, or WebP. Large photos are shrunk automatically.</small>
+                </div>
+                <div class="form-field form-field-wide">
+                    <label for="new-details">Details</label>
+                    <textarea id="new-details" name="details" rows="3"></textarea>
+                </div>
+                <div class="form-actions form-field-wide">
+                    <button type="submit">Add menu item</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

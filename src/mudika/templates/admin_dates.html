@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Pickup dates | Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+</head>
+<body class="admin-page">
+    <header class="admin-header">
+        <div>
+            <p class="eyebrow">Mudika PO</p>
+            <h1>Pickup dates</h1>
+        </div>
+        <nav class="admin-nav">
+            <a href="{{ url_for('customer.home') }}">View customer page</a>
+            <form method="post" action="{{ url_for('admin.logout') }}">
+                <button type="submit" class="link-button">Log out</button>
+            </form>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="admin-messages" role="status">
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="admin-dates-layout">
+        {# ---------- Existing pickup dates ---------- #}
+        <section class="admin-section">
+            <h2>Existing pickup dates</h2>
+            {% if pickup_dates %}
+            <ul class="pickup-date-list">
+                {% for pickup_date in pickup_dates %}
+                <li>
+                    <div>
+                        <strong>{{ pickup_date }}</strong>
+                        {% if pickup_date == settings.active_pickup_date %}
+                        <span class="active-badge">Customer menu</span>
+                        {% endif %}
+                    </div>
+                    <div class="pickup-date-actions">
+                        <a href="{{ url_for('admin.manage_date', pickup_date=pickup_date) }}">Manage</a>
+                        <form method="post" data-confirm="Remove pickup date {{ pickup_date }} and all of its menu items?" action="{{ url_for('admin.delete_date', pickup_date=pickup_date) }}">
+                            <button type="submit" class="delete-button">Remove</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No pickup dates yet. Create one to get started.</p>
+            {% endif %}
+        </section>
+
+        {# ---------- Create a pickup date ---------- #}
+        <section class="admin-section">
+            <h2>Create a pickup date</h2>
+            <form class="date-create-form" method="post" action="{{ url_for('admin.dates') }}">
+                <div class="form-field">
+                    <label for="pickup-date">Pick-up date</label>
+                    <input id="pickup-date" name="pickup_date" type="date" required>
+                </div>
+                <button type="submit">Create date</button>
+            </form>
+        </section>
+
+        {# ---------- Site settings ---------- #}
+        <section class="admin-section">
+            <h2>Site settings</h2>
+            <form class="admin-form" method="post" action="{{ url_for('admin.update_settings') }}">
+                <div class="form-field">
+                    <label for="etransfer-email">E-transfer email</label>
+                    <input id="etransfer-email" name="etransfer_email" type="email" value="{{ settings.etransfer_email }}" placeholder="name@example.com">
+                    <small>Shown to customers who choose e-transfer.</small>
+                </div>
+                <div class="form-field">
+                    <label for="contact-info">Contact info</label>
+                    <input id="contact-info" name="contact_info" type="text" value="{{ settings.contact_info }}" placeholder="e.g. Patrick, 416-000-0000">
+                    <small>Shown at the top of the order page and receipt.</small>
+                </div>
+                <div class="form-actions form-field-wide">
+                    <button type="submit">Save settings</button>
+                </div>
+            </form>
+        </section>
+
+        {# ---------- Google Sheet copy ---------- #}
+        <section class="admin-section">
+            <h2>Google Sheet</h2>
+            {% if not sheets_configured %}
+            <p>The Google Sheet isn't connected yet, so orders are only saved in the website's database. See the README for the setup steps.</p>
+            {% elif unsynced_count %}
+            <p>{{ unsynced_count }} order(s) haven't been copied to the Google Sheet yet.</p>
+            {% else %}
+            <p>All orders are copied to the Google Sheet.</p>
+            {% endif %}
+            {% if sheets_configured and unsynced_count %}
+            <form method="post" action="{{ url_for('admin.sync_sheet') }}">
+                <button type="submit">Copy missing orders to Google Sheet</button>
+            </form>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

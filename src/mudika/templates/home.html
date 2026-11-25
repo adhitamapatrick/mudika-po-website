@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mudika PO</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='order_confirmation.js') }}" defer></script>
+</head>
+<body class="customer-page">
+    <img class="customer-logo" src="{{ url_for('static', filename='images/logo_mudika.png') }}" alt="Mudika logo">
+    <main class="customer-frame">
+    <h1>MUDIKA PO</h1>
+
+    {# ---------- Pickup info and contact ---------- #}
+    {% if schedule %}
+    <p class="pickup-schedule">
+        Open order until <strong>{{ pretty_date(schedule.close_order_date) }}</strong>.<br>
+        Pick up on <strong>{{ pretty_date(schedule.pickup_date) }}</strong> from 3.30 - 4.30 PM at <strong>{{ schedule.pickup_location or 'Pickup location not set' }}</strong>
+    </p>
+    {% endif %}
+    {% if settings.contact_info %}
+    <p class="contact-info">Contact info: {{ settings.contact_info }}</p>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="order-messages" role="status">
+                {% for category, message in messages %}
+                    <p class="message message-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <hr>
+
+    {% if not schedule %}
+    <p class="orders-closed">Orders are not open right now. Please check back soon!</p>
+    {% elif orders_closed %}
+    <p class="orders-closed">Orders for {{ pretty_date(schedule.pickup_date) }} are closed. Thank you for your support!</p>
+    {% else %}
+
+    <form class="customer-order-form" action="{{ url_for('customer.submit_order') }}" method="post" data-etransfer-email="{{ settings.etransfer_email }}">
+
+    {# ---------- Customer details ---------- #}
+    <div class="customer-details">
+        <div class="customer-field">
+            <label for="customer-name">Name <span class="required-mark" aria-hidden="true">*</span></label>
+            <input id="customer-name" name="customer_name" type="text" autocomplete="name" required>
+            <small>First and Last Name</small>
+        </div>
+        <div class="customer-field">
+            <label for="customer-phone">Phone Number <span class="required-mark" aria-hidden="true">*</span></label>
+            <input id="customer-phone" name="customer_phone" type="tel" autocomplete="tel" placeholder="(000) 000-0000" required>
+        </div>
+    </div>
+    <fieldset class="customer-payment">
+        <legend>Payment Method <span class="required-mark" aria-hidden="true">*</span></legend>
+        <div class="payment-options">
+            <label>
+                <input type="radio" name="payment_method" value="etransfer" required>
+                <span>E-transfer{% if settings.etransfer_email %} to <strong>{{ settings.etransfer_email }}</strong>{% endif %}</span>
+            </label>
+            <label>
+                <input type="radio" name="payment_method" value="cash" required>
+                <span>Cash</span>
+            </label>
+        </div>
+    </fieldset>
+    <hr>
+
+    {# ---------- Menu ---------- #}
+    <h2>Current Menu</h2>
+    {% if not menu %}
+    <p>The menu hasn't been posted yet.</p>
+    {% endif %}
+    <div class="menu-grid">
+        {% for item in menu %}
+        {% set sold_out = item.qty_remaining == 0 %}
+        <div class="menu-item{% if sold_out %} menu-item-sold-out{% endif %}" data-price="{{ item.price }}">
+            <div class="menu-item-image-container">
+                {% if item.image_url %}
+                <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                {% else %}
+                <div class="menu-item-no-image" aria-hidden="true"></div>
+                {% endif %}
+            </div>
+            <div class="menu-item-info-container">
+                <h3 class="menu-item-name">{{ item.name }}</h3>
+                <p class="menu-item-vendor">Vendor: {{ item.vendor }}</p>
+                <p class="menu-item-price">Price: ${{ item.price }}</p>
+                {% if item.details %}
+                <p class="menu-item-details"><em>{{ item.details }}</em></p>
+                {% endif %}
+                {% if item.qty_min and item.qty_min > 1 %}
+                <p class="menu-item-details">Minimum order: {{ item.qty_min }}</p>
+                {% endif %}
+                {% if item.qty_remaining is not none and item.qty_remaining <= 10 %}
+                <p class="stock-remaining{% if sold_out %} stock-sold-out{% endif %}">
+                    {% if sold_out %}SOLD OUT{% else %}{{ item.qty_remaining }} left remaining{% endif %}
+                </p>
+                {% endif %}
+            </div>
+            <div class="quantity-control">
+                <label class="quantity-label" for="quantity-{{ item.id }}">Quantity</label>
+                <div class="quantity-adjuster">
+                    <button type="button" class="quantity-minus" aria-label="Decrease {{ item.name }} quantity" {% if sold_out %}disabled{% endif %}>-</button>
+                    <input id="quantity-{{ item.id }}" type="number" name="quantity_{{ item.id }}" value="0"
+                           min="0" data-min="{{ item.qty_min or 0 }}" max="{{ item.qty_remaining if item.qty_remaining is not none else '' }}" step="1"
+                           class="quantity-input" aria-label="{{ item.name }} quantity" {% if sold_out %}disabled{% endif %}>
+                    <button type="button" class="quantity-plus" aria-label="Increase {{ item.name }} quantity" {% if sold_out %}disabled{% endif %}>+</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <hr>
+
+    {# ---------- Additional information ---------- #}
+    <div class="customer-field additional-info-field">
+        <label for="additional-info">Additional information <span class="optional-mark">(optional)</span></label>
+        <textarea id="additional-info" name="additional_info" rows="3" maxlength="{{ additional_info_max_length }}"
+                  placeholder="Special requests, allergies or dietary restrictions"></textarea>
+    </div>
+
+    {# ---------- Total and submit ---------- #}
+    <div class="order-summary">
+        <button type="submit" class="order-submit">Submit order</button>
+        <div class="order-total" aria-live="polite">
+            <strong>Total</strong>
+            <span id="order-total-amount">$0.00</span>
+        </div>
+    </div>
+    </form>
+
+    {# ---------- "Review your order" pop-up (filled in by order_confirmation.js) ---------- #}
+    <dialog class="order-confirmation" id="order-confirmation" aria-labelledby="confirmation-title">
+        <div class="receipt-modal">
+            <header class="receipt-header">
+                <h2 id="confirmation-title">Review your order</h2>
+            </header>
+
+            <section class="receipt-section">
+                <h3>Your Information</h3>
+                <dl class="receipt-information">
+                    <div>
+                        <dt>Name</dt>
+                        <dd id="receipt-name"></dd>
+                    </div>
+                    <div>
+                        <dt>Phone Number</dt>
+                        <dd id="receipt-phone"></dd>
+                    </div>
+                    <div>
+                        <dt>Payment Method</dt>
+                        <dd id="receipt-payment"></dd>
+                    </div>
+                    <div id="receipt-additional-info-row" hidden>
+                        <dt>Additional information</dt>
+                        <dd id="receipt-additional-info"></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="receipt-section">
+                <h3>Your Orders</h3>
+                <ul class="receipt-items" id="receipt-items"></ul>
+                <div class="receipt-total">
+                    <strong>Total</strong>
+                    <strong id="receipt-total">$0.00</strong>
+                </div>
+            </section>
+
+            <footer class="receipt-footer">
+                <p>Are you sure these orders are correct?</p>
+                <div class="receipt-actions">
+                    <button type="button" class="receipt-cancel" data-cancel-order>Cancel</button>
+                    <button type="button" class="receipt-submit" data-submit-order>Yes, submit now</button>
+                </div>
+            </footer>
+        </div>
+    </dialog>
+    {% endif %}
+    </main>
+</body>
+</html>

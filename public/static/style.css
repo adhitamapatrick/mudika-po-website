@@ -517,7 +517,7 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  align-items: end;
+  align-items: start; /* keep both labels on the same line */
 }
 
 .schedule-form .form-actions {
@@ -705,4 +705,124 @@ body {
   .back-to-main {
     display: none;
   }
+}
+/* ---------- Added: contact info, closed notice, additional info field ---------- */
+.contact-info {
+  margin-top: 0;
+}
+
+.orders-closed {
+  padding: 16px;
+  border-radius: 6px;
+  background: #f0f0f0;
+  text-align: center;
+  font-weight: 600;
+}
+
+.menu-item-no-image {
+  width: 200px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: #e8e8e8;
+}
+
+.additional-info-field {
+  margin: 1em 0;
+}
+
+.additional-info-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  font: inherit;
+  resize: vertical;
+}
+
+.optional-mark {
+  color: #555;
+  font-weight: 400;
+}
+
+.receipt-additional-info {
+  white-space: pre-wrap;
+}
+
+/* ---------- Added: admin login and logout ---------- */
+.admin-login {
+  max-width: 420px;
+  margin: 4em auto;
+}
+
+.admin-login .admin-section form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-nav {
+  align-items: center;
+}
+
+.admin-nav form {
+  margin: 0;
+}
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0645ad;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.admin-menu-thumbnail {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* ---------- Added: orders table on the admin page ---------- */
+.orders-table-wrapper {
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  vertical-align: top;
+}
+
+.orders-table th {
+  background: #f3f3f3;
+  white-space: nowrap;
+}
+
+.orders-table ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.orders-table .order-notes {
+  white-space: pre-wrap;
+  max-width: 240px;
+}
+
+.orders-table td:nth-child(2),
+.orders-table td:nth-child(4),
+.orders-table td:nth-child(5) {
+  white-space: nowrap;
 }
