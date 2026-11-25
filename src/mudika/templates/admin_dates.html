@@ -83,8 +83,8 @@
                 </div>
                 <div class="form-field">
                     <label for="contact-info">Contact info</label>
-                    <input id="contact-info" name="contact_info" type="text" value="{{ settings.contact_info }}" placeholder="e.g. Patrick, 416-000-0000">
-                    <small>Shown at the top of the order page and receipt.</small>
+                    <textarea id="contact-info" name="contact_info" rows="3" placeholder="Patrick, 416-000-0000&#10;Maria, 647-000-0000&#10;Andi, 437-000-0000">{{ settings.contact_info }}</textarea>
+                    <small>One contact person per line. Shown at the top of the order page and receipt.</small>
                 </div>
                 <div class="form-actions form-field-wide">
                     <button type="submit">Save settings</button>

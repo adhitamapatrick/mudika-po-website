@@ -21,7 +21,12 @@
     </p>
     {% endif %}
     {% if settings.contact_info %}
-    <p class="contact-info">Contact info: {{ settings.contact_info }}</p>
+    <p class="contact-info">
+        Contact info:
+        {% for contact in settings.contact_info.splitlines() %}
+        <br>{{ contact }}
+        {% endfor %}
+    </p>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}

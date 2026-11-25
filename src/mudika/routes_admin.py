@@ -85,7 +85,9 @@ def update_settings():
         flash("Enter a valid e-transfer email.", "error")
         return redirect(url_for("admin.dates"))
     models.save_setting("etransfer_email", email)
-    models.save_setting("contact_info", request.form.get("contact_info", "").strip())
+    # One contact person per line; blank lines are dropped
+    contact_lines = [line.strip() for line in request.form.get("contact_info", "").splitlines()]
+    models.save_setting("contact_info", "\n".join(line for line in contact_lines if line))
     flash("Settings were saved.", "success")
     return redirect(url_for("admin.dates"))
 
