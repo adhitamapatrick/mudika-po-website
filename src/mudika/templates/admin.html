@@ -70,6 +70,52 @@
             </form>
         </section>
 
+        {# ---------- Orders for this pickup date ---------- #}
+        <section class="admin-section">
+            <h2>Orders ({{ orders|length }})</h2>
+            {% if orders %}
+            <p>Total: <strong>${{ '%.2f'|format(orders|sum(attribute='total_cents') / 100) }}</strong></p>
+            <div class="orders-table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order #</th>
+                            <th>Submitted</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Payment</th>
+                            <th>Items</th>
+                            <th>Additional info</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.reference }}</td>
+                            <td>{{ order.created_at[:16].replace('T', ' ') }}</td>
+                            <td>{{ order.customer_name }}</td>
+                            <td>{{ order.customer_phone }}</td>
+                            <td>{{ 'E-transfer' if order.payment_method == 'etransfer' else 'Cash' }}</td>
+                            <td>
+                                <ul>
+                                    {% for item in order['items'] %}
+                                    <li>{{ item.quantity }} × {{ item.item_name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td class="order-notes">{{ order.additional_info }}</td>
+                            <td>${{ order.total }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p>No orders yet for this pickup date.</p>
+            {% endif %}
+        </section>
+
         {# ---------- Existing menu items ---------- #}
         <section class="admin-section">
             <h2>Menu and order totals</h2>

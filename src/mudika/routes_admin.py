@@ -121,6 +121,7 @@ def manage_date(pickup_date):
         schedule=schedule,
         active_pickup_date=models.get_settings()["active_pickup_date"],
         menu=models.list_menu_items(pickup_date),
+        orders=models.list_orders(pickup_date),
         pickup_locations=PICKUP_LOCATIONS,
     )
 

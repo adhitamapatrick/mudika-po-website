@@ -218,6 +218,14 @@ def get_order(order_id):
     return order
 
 
+def list_orders(pickup_date):
+    """All orders for one pickup date, newest first, each with its items."""
+    rows = get_db().all(
+        "SELECT id FROM orders WHERE pickup_date = ? ORDER BY created_at DESC", pickup_date
+    )
+    return [get_order(row["id"]) for row in rows]
+
+
 def list_unsynced_orders():
     """Orders that haven't been copied to the Google Sheet yet (oldest first)."""
     rows = get_db().all("SELECT id FROM orders WHERE sheet_synced = 0 ORDER BY created_at")

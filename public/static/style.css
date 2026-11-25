@@ -517,7 +517,7 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  align-items: end;
+  align-items: start; /* keep both labels on the same line */
 }
 
 .schedule-form .form-actions {
@@ -785,4 +785,44 @@ body {
   height: 96px;
   object-fit: cover;
   border-radius: 6px;
+}
+
+/* ---------- Added: orders table on the admin page ---------- */
+.orders-table-wrapper {
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  vertical-align: top;
+}
+
+.orders-table th {
+  background: #f3f3f3;
+  white-space: nowrap;
+}
+
+.orders-table ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.orders-table .order-notes {
+  white-space: pre-wrap;
+  max-width: 240px;
+}
+
+.orders-table td:nth-child(2),
+.orders-table td:nth-child(4),
+.orders-table td:nth-child(5) {
+  white-space: nowrap;
 }
