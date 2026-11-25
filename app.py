@@ -9,6 +9,7 @@ Data is saved in instance/mudika.sqlite3.
 """
 
 import os
+import secrets
 import sys
 from pathlib import Path
 
@@ -29,6 +30,9 @@ def load_env_file(path):
 
 
 load_env_file(PROJECT_DIR / ".env")
+
+# Without FLASK_SECRET_KEY in .env, use a temporary one (you'll be logged out when the app restarts)
+os.environ.setdefault("FLASK_SECRET_KEY", secrets.token_hex(32))
 
 from mudika import create_app  # noqa: E402  (must come after loading .env)
 
