@@ -1,0 +1,17 @@
+{# Contact people, shown under the pickup info on the order page and receipt #}
+{% set contacts = settings.contact_info|contacts %}
+{% if contacts %}
+<section class="contact-info" aria-label="Contact info">
+    <p class="contact-info-title">Questions? Contact us</p>
+    <ul class="contact-list">
+        {% for contact in contacts %}
+        <li class="contact-chip">
+            <span class="contact-name">{{ contact.name }}</span>
+            {% if contact.phone %}
+            <a class="contact-phone" href="tel:{{ contact.tel }}">{{ contact.phone }}</a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}

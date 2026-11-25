@@ -69,6 +69,30 @@ def is_valid_phone(phone):
     return len(digits) == 10 or (len(digits) == 11 and digits.startswith("1"))
 
 
+PHONE_PATTERN = re.compile(r"\+?[\d][\d\s().-]{8,}\d")
+
+
+def parse_contacts(text):
+    """
+    Turn the admin's contact lines into a list for the order page, e.g.
+    "Patrick (647-000-0000)" -> {"name": "Patrick", "phone": "647-000-0000", "tel": "6470000000"}.
+    Lines without a phone number are shown as they are.
+    """
+    contacts = []
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        match = PHONE_PATTERN.search(line)
+        if match and is_valid_phone(match.group()):
+            phone = match.group().strip()
+            name = (line[: match.start()] + line[match.end():]).strip(" ,:-()")
+            contacts.append({"name": name, "phone": phone, "tel": re.sub(r"[^\d+]", "", phone)})
+        else:
+            contacts.append({"name": line, "phone": "", "tel": ""})
+    return contacts
+
+
 def payment_label(method, etransfer_email):
     if method == "etransfer":
         return f"E-transfer to {etransfer_email}" if etransfer_email else "E-transfer"

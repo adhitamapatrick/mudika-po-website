@@ -708,7 +708,52 @@ body {
 }
 /* ---------- Added: contact info, closed notice, additional info field ---------- */
 .contact-info {
-  margin-top: 0;
+  margin: 20px 0 24px;
+  text-align: center;
+}
+
+.contact-info-title {
+  margin: 0 0 10px;
+  color: #555;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.contact-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 150px;
+  padding: 8px 16px;
+  border: 1px solid #cfe0d6;
+  border-radius: 8px;
+  background: #f3f8f5;
+}
+
+.contact-name {
+  font-weight: 600;
+}
+
+.contact-phone {
+  color: #174f3b;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.contact-phone:hover {
+  text-decoration: underline;
 }
 
 .orders-closed {
