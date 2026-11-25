@@ -12,7 +12,6 @@ Folder guide:
   templates/          the HTML pages
 """
 
-import secrets
 from datetime import timedelta
 from pathlib import Path
 
@@ -41,7 +40,9 @@ def create_app():
         SESSION_COOKIE_SAMESITE="Lax",              # other websites can't submit forms as you
         PERMANENT_SESSION_LIFETIME=timedelta(days=7),
     )
-    app.secret_key = config.get_setting("FLASK_SECRET_KEY") or secrets.token_hex(32)
+    # On Cloudflare the key arrives with the first request (see apply_cloudflare_settings).
+    # Don't generate random values here: Cloudflare blocks randomness while the app starts.
+    app.secret_key = config.get_setting("FLASK_SECRET_KEY")
 
     ### Template helpers ###
     from .helpers import parse_contacts

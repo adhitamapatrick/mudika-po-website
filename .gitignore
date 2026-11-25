@@ -211,3 +211,5 @@ __marimo__/
 node_modules/
 python_modules/
 .dev.vars
+mudika_po_website.egg-info/
+pylock.toml
