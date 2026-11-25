@@ -43,6 +43,11 @@ def create_app():
     )
     app.secret_key = config.get_setting("FLASK_SECRET_KEY") or secrets.token_hex(32)
 
+    ### Template helpers ###
+    from .helpers import parse_contacts
+
+    app.jinja_env.filters["contacts"] = parse_contacts
+
     ### Pages ###
     from . import routes_admin, routes_customer
 

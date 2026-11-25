@@ -19,14 +19,7 @@
             Pick up on <strong>{{ pretty_date(schedule.pickup_date) }}</strong> from 3.30 - 4.30 PM at <strong>{{ schedule.pickup_location or 'Pickup location not set' }}</strong>
         </p>
         {% endif %}
-        {% if settings.contact_info %}
-        <p class="contact-info">
-        Contact info:
-        {% for contact in settings.contact_info.splitlines() %}
-        <br>{{ contact }}
-        {% endfor %}
-    </p>
-        {% endif %}
+        {% include '_contact_info.html' %}
 
         <hr>
 
